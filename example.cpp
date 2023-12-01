@@ -2,28 +2,25 @@
 #include <vector>
 #include <chrono>
 
-#include "ThreadPool.h"
+#include "ThreadPool.hpp"
 
-int main()
-{
-    
-    ThreadPool pool(4);
-    std::vector< std::future<int> > results;
+int main() {
+  std::vector<std::future<int> > results;
 
-    for(int i = 0; i < 8; ++i) {
-        results.emplace_back(
-            pool.enqueue([i] {
-                std::cout << "hello " << i << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-                std::cout << "world " << i << std::endl;
-                return i*i;
-            })
-        );
+  {
+    ThreadPool::ThreadPool pool(4);
+    for (int i = 0; i < 80; ++i) {
+      results.emplace_back(pool.enqueue([i] {
+        // std::cout << "hello " << i << std::endl;
+        // std::this_thread::sleep_for(std::chrono::seconds(1));
+        // std::cout << "world " << i << std::endl;
+        return i * i;
+      }));
     }
+  }
 
-    for(auto && result: results)
-        std::cout << result.get() << ' ';
-    std::cout << std::endl;
-    
-    return 0;
+  for (auto&& result : results) std::cout << result.get() << ' ';
+  std::cout << std::endl;
+
+  return 0;
 }
