@@ -17,7 +17,7 @@ include(GNUInstallDirs)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_OPTIMIZE_DEPENDENCIES ON)
 
-add_library(ThreadPool SHARED ThreadPool.cpp)
+add_library(ThreadPool SHARED ThreadPool/ThreadPool.cpp)
 
 target_compile_features(
   ThreadPool
@@ -47,7 +47,7 @@ install(TARGETS ThreadPool
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(FILES ThreadPool.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ThreadPool.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ThreadPool)
 
 install(EXPORT ThreadPoolTargets
         FILE ThreadPoolTargets.cmake

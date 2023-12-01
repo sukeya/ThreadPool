@@ -2,7 +2,7 @@
 #include <vector>
 #include <chrono>
 
-#include "ThreadPool.hpp"
+#include "ThreadPool/ThreadPool.hpp"
 
 int main() {
   std::vector<std::future<int> > results;

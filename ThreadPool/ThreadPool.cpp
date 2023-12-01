@@ -1,4 +1,4 @@
-#include "ThreadPool.hpp"
+#include "ThreadPool/ThreadPool.hpp"
 
 namespace ThreadPool {
 // the constructor just launches some amount of workers_
