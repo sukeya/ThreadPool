@@ -15,14 +15,14 @@
 namespace ThreadPool {
 class ThreadPool {
  public:
-  ThreadPool();
-  ThreadPool(ThreadPool&&);
-  ThreadPool& operator=(ThreadPool&&);
+  ThreadPool()                        = default;
+  ThreadPool(ThreadPool&&)            = default;
+  ThreadPool& operator=(ThreadPool&&) = default;
 
   ThreadPool(const ThreadPool&)            = delete;
   ThreadPool& operator=(const ThreadPool&) = delete;
 
-  virtual ~ThreadPool();
+  ~ThreadPool();
 
   explicit ThreadPool(size_t);
 
@@ -37,7 +37,7 @@ class ThreadPool {
 
     auto res = task.get_future();
     {
-      auto lock = std::unique_lock<std::mutex>(*queue_mutex_ptr_);
+      auto lock = std::unique_lock<std::mutex>(queue_mutex_);
 
       // don't allow enqueueing after stopping the pool
       if (stop_) {
@@ -45,7 +45,7 @@ class ThreadPool {
       }
 
       tasks_.emplace(std::move(task));
-      condition_ptr_->notify_one();
+      condition_.notify_one();
     }
     return res;
   }
@@ -57,9 +57,9 @@ class ThreadPool {
   std::queue<std::packaged_task<void()>> tasks_;
 
   // synchronization
-  std::unique_ptr<std::mutex>              queue_mutex_ptr_;
-  std::unique_ptr<std::condition_variable> condition_ptr_;
-  bool                                     stop_;
+  std::mutex              queue_mutex_;
+  std::condition_variable condition_;
+  bool                    stop_;
 };
 }  // namespace ThreadPool
 
