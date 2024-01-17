@@ -92,9 +92,8 @@ export(EXPORT ThreadPoolTargets
        NAMESPACE ThreadPool::
 )
 
-option(THREADPOOL_BUILD_EXAMPLE "Build the example" OFF)
+option(THREADPOOL_USE_TEST "Test thread pool" OFF)
 
-if (THREADPOOL_BUILD_EXAMPLE)
-  add_executable(ThreadPoolExample example.cpp)
-  target_link_libraries(ThreadPoolExample PRIVATE ThreadPool)
+if (THREADPOOL_USE_TEST)
+  add_subdirectory(test)
 endif()

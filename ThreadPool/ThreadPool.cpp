@@ -1,21 +1,42 @@
 #include "ThreadPool/ThreadPool.hpp"
 
+#include <iostream>
+
 namespace ThreadPool {
 // the constructor just launches some amount of workers_
-ThreadPool::ThreadPool(size_t threads) : stop_(false) {
-  for (size_t i = 0; i < threads; ++i)
-    workers_.emplace_back([this] {
+ThreadPool::ThreadPool(size_t threads_size) {
+  for (size_t i = 0; i < threads_size; ++i)
+    workers_.emplace_back([this]() {
       for (;;) {
         auto task = std::packaged_task<void()>();
 
-        {
-          auto lock = std::unique_lock<std::mutex>(queue_mutex_);
-          condition_.wait(lock, [this] { return stop_ || !tasks_.empty(); });
+        // TODO: Why doesn't the following code work?
+        /*
+        AbsolutelyLock(queue_mutex_, [this, &task](std::unique_lock<std::mutex>& lock) {
+          condition_.wait(lock, [this]() { return stop_ || !tasks_.empty(); });
           if (stop_ && tasks_.empty()) {
             return;
           }
           task = std::move(tasks_.front());
           tasks_.pop();
+        });
+        */
+
+        // for determining time to sleep.
+        auto engine = std::mt19937(std::random_device{}());
+        auto dist   = std::uniform_int_distribution<int>(1, 999);
+        for (auto lock = std::unique_lock<std::mutex>(queue_mutex_, std::defer_lock);;) {
+          if (lock.try_lock()) {
+            condition_.wait(lock, [this]() { return stop_ || !tasks_.empty(); });
+            if (stop_ && tasks_.empty()) {
+              return;
+            }
+            task = std::move(tasks_.front());
+            tasks_.pop();
+            break;
+          } else {
+            std::this_thread::sleep_for(std::chrono::microseconds(dist(engine)));
+          }
         }
 
         task();
@@ -25,11 +46,10 @@ ThreadPool::ThreadPool(size_t threads) : stop_(false) {
 
 // the destructor joins all threads
 ThreadPool::~ThreadPool() {
-  {
-    auto lock = std::unique_lock<std::mutex>(queue_mutex_);
-    stop_     = true;
+  AbsolutelyLock(queue_mutex_, [this](std::unique_lock<std::mutex>&) {
+    stop_ = true;
     condition_.notify_all();
-  }
+  });
   for (std::thread& worker : workers_) {
     worker.join();
   }
