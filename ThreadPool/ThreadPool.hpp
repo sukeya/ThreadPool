@@ -1,6 +1,7 @@
 #ifndef _THREAD_POOL_THREAD_POOL_HPP_
 #define _THREAD_POOL_THREAD_POOL_HPP_
 
+#include <chrono>
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -13,14 +14,16 @@
 #include <type_traits>
 #include <vector>
 
+#include <iostream>
+
 namespace ThreadPool {
 class ThreadPool {
  public:
   template <class F>
-  static void AbsolutelyLock(std::mutex& mutex, F&& f) {
-    // for determining time to sleep.
-    auto engine = std::mt19937(std::random_device{}());
-    auto dist   = std::uniform_int_distribution<int>(1, 999);
+  requires std::invocable<F, std::unique_lock<std::mutex>&>
+  static void AbsolutelyLock(
+      std::mutex& mutex, std::mt19937& engine, std::uniform_int_distribution<int>& dist, F&& f
+  ) {
     for (auto lock = std::unique_lock<std::mutex>(mutex, std::defer_lock);;) {
       if (lock.try_lock()) {
         f(lock);
@@ -54,6 +57,8 @@ class ThreadPool {
 
     AbsolutelyLock(
         queue_mutex_,
+        engine_,
+        dist_,
         [this, moved_task = std::move(task)](std::unique_lock<std::mutex>&) mutable {
           // don't allow enqueueing after stopping the pool
           if (stop_) {
@@ -78,6 +83,10 @@ class ThreadPool {
   std::mutex              queue_mutex_;
   std::condition_variable condition_;
   bool                    stop_{false};
+
+  // for determining time to sleep.
+  std::mt19937                       engine_{std::random_device{}()};
+  std::uniform_int_distribution<int> dist_{1, 999};
 };
 }  // namespace ThreadPool
 
