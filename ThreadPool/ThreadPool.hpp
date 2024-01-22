@@ -15,23 +15,21 @@
 #include <vector>
 
 namespace ThreadPool {
-class ThreadPool {
- public:
-  template <class F>
-  requires std::invocable<F, std::unique_lock<std::mutex>&>
-  static void AbsolutelyLock(
-      std::mutex& mutex, std::mt19937& engine, std::uniform_int_distribution<int>& dist, F&& f
-  ) {
-    for (auto lock = std::unique_lock<std::mutex>(mutex, std::defer_lock);;) {
-      if (lock.try_lock()) {
-        f(lock);
-        break;
-      } else {
-        std::this_thread::sleep_for(std::chrono::microseconds(dist(engine)));
-      }
+template <class F>
+requires std::invocable<F, std::unique_lock<std::mutex>&>
+static void AbsolutelyLock(std::mutex& mutex, int microseconds, F&& f) {
+  for (auto lock = std::unique_lock<std::mutex>(mutex, std::defer_lock);;) {
+    if (lock.try_lock()) {
+      f(lock);
+      break;
+    } else {
+      std::this_thread::sleep_for(std::chrono::microseconds(microseconds));
     }
   }
+}
 
+class ThreadPool {
+ public:
   ThreadPool() = default;
 
   ThreadPool(const ThreadPool&)            = delete;
@@ -55,8 +53,7 @@ class ThreadPool {
 
     AbsolutelyLock(
         queue_mutex_,
-        engine_,
-        dist_,
+        dist_(engine_),
         [this, moved_task = std::move(task)](std::unique_lock<std::mutex>&) mutable {
           // don't allow enqueueing after stopping the pool
           if (stop_) {

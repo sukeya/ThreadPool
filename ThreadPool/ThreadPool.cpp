@@ -42,7 +42,7 @@ ThreadPool::ThreadPool(size_t threads_size) {
 
 // the destructor joins all threads
 ThreadPool::~ThreadPool() {
-  AbsolutelyLock(queue_mutex_, engine_, dist_, [this](std::unique_lock<std::mutex>&) {
+  AbsolutelyLock(queue_mutex_, dist_(engine_), [this](std::unique_lock<std::mutex>&) {
     stop_ = true;
     condition_.notify_all();
   });
