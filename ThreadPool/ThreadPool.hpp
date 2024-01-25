@@ -18,7 +18,7 @@ namespace ThreadPool {
 template <class F, class URBG, class Int>
 requires std::invocable<F, std::unique_lock<std::mutex>&> && std::integral<Int>
 static void AbsolutelyLock(
-    std::mutex& mutex, URBG& engine, std::uniform_int_distribution<Int>& dist, F f
+    std::mutex& mutex, URBG& engine, std::uniform_int_distribution<Int>& dist, F&& f
 ) {
   for (auto lock = std::unique_lock<std::mutex>(mutex, std::defer_lock);;) {
     if (lock.try_lock()) {
